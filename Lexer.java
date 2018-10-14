@@ -8,8 +8,8 @@ import java.util.Scanner;
  *   [0-9]*[a-fA-F][0-9a-fA-F]*  -> 整数 (例: 0123456789a)
  *   [1-9][0-9]*\.[0-9]*         -> 小数 (例: 10.3)
  *   0\.[0-9]*                   -> 小数 (例: 0.12)
- *   \.[0-9]+                    -> 小数 (例: .12)
- */
+ *   \.[0-9]+                    -> 小数 (例: .12)*/
+  
 
 public class Lexer {
 	static class Token {
@@ -40,24 +40,41 @@ public class Lexer {
 	 *   [1-9] や [a-f] をまとめて扱えるようにするため．
 	 */
 	static int getCharType(int c) {
-		if (c == '.')             return CT_P;
-		if (c == 'x' || c == 'X') return CT_X;
-		if (c == '0')             return CT_0;
-		if ('1' <= c && c <= '9') return CT_1;
-		if ('a' <= c && c <= 'f') return CT_A;
+		if (c == '.')             return CT_P;//0
+		if (c == 'x' || c == 'X') return CT_X;//1
+		if (c == '0')             return CT_0;//2
+		if ('1' <= c && c <= '9') return CT_1;//3
+		if ('a' <= c && c <= 'f') return CT_A;//4
 		if ('A' <= c && c <= 'F') return CT_A;
-		return CT_OTHER;
+		return CT_OTHER;//5
 	}
+
+
 	
 	int[][] delta = {
 		/* TODO */
 		/* 状態遷移表を作る */
 		/*   delta[現状態][入力記号] */
 
+
+		// Init,    0     /* 初期状態                     */
+		// Int,     1     /* 整数状態                     */
+		//Real,     2    /* 実数状態                     */
+		//Id,       3    /* 識別子状態                   */
+		//Final,    4    /* 終了状態                     */
+		//Error     5    /* エラー状態                   */
+
 		/*  P  X  0  1  A  OTHER */
 		/*{ ?, ?, ?, ?, ?, ?}, /* 状態0 */
 		/*{ ?, ?, ?, ?, ?, ?}, /* 状態1 */
 		/*...*/
+		/* number, alpha,period, delim */
+  		{     2,    1,    1,    1,    1,    0 },
+  		{     2,    4,    1,    4,    0,    5 }, 
+ 	    {     2,    5,    2,    2,    5,    3 }, 
+  		{     3,    3,    4,    4,    4,    3 },
+
+
 	};
 
 	/*
@@ -85,6 +102,18 @@ public class Lexer {
 			/* 行先がなければループを抜ける */
 			/* 行先が受理状態であれば「最後の受理状態」を更新する */
 
+			//if(nextState == 4) break;
+			if(nextState == 1){
+					acceptType = Token.TYPE_INT;
+				}else if(nextState == 2){
+					acceptType = Token.TYPE_DEC;
+				}else if(nextState == 4){
+					break;
+				}else if(nextState == 5){
+					acceptType = Token.TYPE_ERR;
+					break;
+				}else{
+			}
 			currentState = nextState;
 		}
 		
