@@ -57,23 +57,30 @@ public class Lexer {
 		/*   delta[現状態][入力記号] */
 
 
-		// Init,    0     /* 初期状態                     */
+	// Init,    0     /* 初期状態                     */
 		// Int,     1     /* 整数状態                     */
 		//Real,     2    /* 実数状態                     */
 		//Id,       3    /* 識別子状態                   */
-		//Final,    4    /* 終了状態                     */
-		//Error     5    /* エラー状態                   */
+		//Final,    8    /* 終了状態                     */
+		//Error     9    /* エラー状態                   */
 
-		/*  P  X  0  1  A  OTHER */
+		
 		/*{ ?, ?, ?, ?, ?, ?}, /* 状態0 */
 		/*{ ?, ?, ?, ?, ?, ?}, /* 状態1 */
 		/*...*/
-		/* number, alpha,period, delim */
-  		{     4,    3,    1,    1,    1,    5 },
-  		{     2,    4,    1,    1,    1,    4 }, 
- 	    {     4,    4,    2,    2,    4,    4 }, 
-  		{     5,    5,    1,    1,    1,    4 },
-
+		
+		/*  　P     X     0     1     A  OTHER */
+  		{     3,    4,    5,    1,    7,    9 },	//0_初期0
+  		{     2,    8,    1,    1,    7,    8 },	//1_10進状態 
+ 	    {     8,    8,    2,    2,    8,    8 },	//2_実数状態 
+  		{     9,    9,    2,    2,    9,    9 },	//3_初期point
+  		{     9,    9,    7,    7,    7,    9 },	//4_初期X
+  		{     2,    10,    6,    6,    7,    8 },	//5_初期0
+ 	    {     2,    7,   8,    6,    7,    11 },	//6_0から続ける処理 
+  		{     8,    8,    7,    7,    7,    11 },	//7_16進状態 
+  		{     8,    8,    8,    8,    8,    8 },	//8_16進状態 
+  		{     8,    8,    8,    8,    8,    8 },	//9_16進状態 
+  		{     8,    8,    10,   7,    7,    11 },	//10_0x進状態 
 
 	};
 
@@ -90,6 +97,7 @@ public class Lexer {
 
 		/* 現在の状態 */
 		int currentState = 0;
+		int current16 = 0;
 
 		while (p < str.length()) {
 			int c = str.charAt(p); /* str の p 文字目を読み取る */
@@ -98,22 +106,60 @@ public class Lexer {
 			int ct = getCharType(c);
 			int nextState = delta[currentState][ct];
 
+
+
 			/* TODO */
 			/* 行先がなければループを抜ける */
 			/* 行先が受理状態であれば「最後の受理状態」を更新する */
 
 			//if(nextState == 4) break;
+
 			if(nextState == 1){
 					acceptType = Token.TYPE_INT;
+					acceptPos++;
 				}else if(nextState == 2){
 					acceptType = Token.TYPE_DEC;
+					acceptPos++;
+				}else if(nextState == 3  && p == str.length()){
+		
+				}else if(nextState == 3){
+					acceptType = Token.TYPE_DEC;
+					acceptPos++;
+				}else if(nextState == 4  && p == str.length()){
+			
 				}else if(nextState == 4){
-					break;
+					acceptPos++;
 				}else if(nextState == 5){
+					acceptType = Token.TYPE_INT;
+					acceptPos++;
+				}else if(nextState == 6){
+					acceptType = Token.TYPE_INT;
+					current16++;
+				}else if(nextState == 7){
+					acceptType = Token.TYPE_INT;
+					acceptPos = current16 + acceptPos;
+					current16 = 0;
+					acceptPos++;
+				}else if(nextState == 8){
+					break;
+				}else if(nextState == 9 ){
 					acceptType = Token.TYPE_ERR;
+					acceptPos--;
+					break;
+				}else if(nextState == 10 && p == str.length()){
+				
+				}else if(nextState == 10){
+					acceptType = Token.TYPE_INT;
+					acceptPos = current16 + acceptPos;
+					current16 = 0;
+					acceptPos++;
+				}else if(nextState == 11){
+					acceptPos=1;
 					break;
 				}else{
-			}
+					//acceptPos--;
+						}
+			//acceptPos++;
 			currentState = nextState;
 		}
 		
